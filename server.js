@@ -32,7 +32,7 @@ const upload = multer({ storage: storage });
 let opi5Socket = null;
 
 io.on('connection', (socket) => {
-  const role = socket.handshake.query.role;
+  const role = socket.handshake.query.role || (socket.handshake.auth && socket.handshake.auth.role);
 
   if (role === 'edge') {
     opi5Socket = socket;
