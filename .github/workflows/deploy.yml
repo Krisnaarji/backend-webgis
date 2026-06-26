@@ -18,3 +18,4 @@ jobs:
             git reset --hard origin/main
             npm install
             pm2 restart api-webgis
+            cp admin.html /var/www/webgis/admin.html
