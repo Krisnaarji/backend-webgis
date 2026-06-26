@@ -29,6 +29,49 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+const mqtt = require('mqtt');
+const mqttClient = mqtt.connect('mqtt://localhost:1883');
+
+mqttClient.on('connect', () => {
+  console.log('[MQTT] Connected to broker');
+  mqttClient.subscribe('pothole/detection');
+  mqttClient.subscribe('pothole/telemetry');
+});
+
+mqttClient.on('message', async (topic, message) => {
+  try {
+    const data = JSON.parse(message.toString());
+
+    if (topic === 'pothole/detection') {
+      const result = await pool.query(
+        `INSERT INTO potholes (geom, severity, image_name)
+         VALUES (ST_SetSRID(ST_MakePoint($1, $2), 4326), $3, $4)
+         RETURNING id, created_at`,
+        [data.lng, data.lat, data.severity, data.image_name || null]
+      );
+      io.emit('new_pothole', {
+        id: result.rows[0].id,
+        lat: data.lat, lng: data.lng,
+        severity: data.severity,
+        image_name: data.image_name || null,
+        created_at: result.rows[0].created_at
+      });
+      console.log(`[MQTT] Pothole saved: ${data.lat}, ${data.lng}`);
+    }
+
+    if (topic === 'pothole/telemetry') {
+      io.emit('log', {
+        message: `Speed: ${data.speed} km/h | FPS: ${data.fps} | Det: ${data.detections}`,
+        type: data.detections > 0 ? 'det' : 'normal',
+        speed: data.speed,
+        fps: data.fps
+      });
+    }
+  } catch (err) {
+    console.error('[MQTT] Error:', err.message);
+  }
+}); 
+
 let opi5Socket = null;
 
 io.on('connection', (socket) => {
