@@ -6,6 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
+const mqtt = require('mqtt');
 
 const app = express();
 const server = http.createServer(app);
@@ -29,7 +30,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-const mqtt = require('mqtt');
 const mqttClient = mqtt.connect('mqtt://localhost:1883');
 
 mqttClient.on('connect', () => {
@@ -44,19 +44,19 @@ mqttClient.on('message', async (topic, message) => {
 
     if (topic === 'pothole/detection') {
       const result = await pool.query(
-        `INSERT INTO potholes (geom, severity, image_name)
+        `INSERT INTO potholes (geom, severity, det_id)
          VALUES (ST_SetSRID(ST_MakePoint($1, $2), 4326), $3, $4)
          RETURNING id, created_at`,
-        [data.lng, data.lat, data.severity, data.image_name || null]
+        [data.lng, data.lat, data.severity, data.det_id]
       );
       io.emit('new_pothole', {
         id: result.rows[0].id,
         lat: data.lat, lng: data.lng,
         severity: data.severity,
-        image_name: data.image_name || null,
+        image_name: null,
         created_at: result.rows[0].created_at
       });
-      console.log(`[MQTT] Pothole saved: ${data.lat}, ${data.lng}`);
+      console.log(`[MQTT] Pothole saved: ${data.lat}, ${data.lng} (${data.det_id})`);
     }
 
     if (topic === 'pothole/telemetry') {
@@ -70,7 +70,7 @@ mqttClient.on('message', async (topic, message) => {
   } catch (err) {
     console.error('[MQTT] Error:', err.message);
   }
-}); 
+});
 
 let opi5Socket = null;
 
@@ -98,13 +98,35 @@ io.on('connection', (socket) => {
 app.get('/api/potholes', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, severity, created_at, image_name,
+      `SELECT id, severity, created_at, image_name, det_id,
               ST_X(geom) as lng, ST_Y(geom) as lat
        FROM potholes ORDER BY created_at DESC`
     );
     res.json(result.rows);
   } catch (err) {
     res.status(500).send("Error database");
+  }
+});
+
+app.post('/api/potholes/image', upload.single('image'), async (req, res) => {
+  const { det_id } = req.body;
+  const imageName = req.file ? req.file.filename : null;
+  if (!det_id || !imageName) {
+    return res.status(400).send("det_id dan image wajib");
+  }
+  try {
+    const result = await pool.query(
+      'UPDATE potholes SET image_name = $1 WHERE det_id = $2 RETURNING id',
+      [imageName, det_id]
+    );
+    if (result.rowCount > 0) {
+      io.emit('pothole_image', { det_id, image_name: imageName });
+      res.status(200).send("Foto berhasil diupload");
+    } else {
+      res.status(404).send("det_id tidak ditemukan");
+    }
+  } catch (err) {
+    res.status(500).send("Gagal update foto");
   }
 });
 
@@ -149,5 +171,5 @@ app.get('/api/stats', async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(`Server WebGIS + WebSocket on port ${PORT}`);
+  console.log(`Server WebGIS + WebSocket + MQTT on port ${PORT}`);
 });
