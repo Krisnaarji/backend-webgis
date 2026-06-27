@@ -43,7 +43,17 @@ mqttClient.on('message', async (topic, message) => {
     const data = JSON.parse(message.toString());
 
     if (topic === 'pothole/detection') {
-      const result = await pool.query(
+      const existing = await pool.query(
+        `SELECT id FROM potholes 
+         WHERE ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, 5)
+         AND created_at > NOW() - INTERVAL '3 seconds'`,
+        [data.lng, data.lat]
+      );
+      if (existing.rowCount > 0) {
+        console.log('[MQTT] Dedup: skip, too close');
+        return;
+      }
+      const result = await pool.qu  ery(
         `INSERT INTO potholes (geom, severity, det_id)
          VALUES (ST_SetSRID(ST_MakePoint($1, $2), 4326), $3, $4)
          RETURNING id, created_at`,
