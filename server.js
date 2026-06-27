@@ -53,7 +53,7 @@ mqttClient.on('message', async (topic, message) => {
         console.log('[MQTT] Dedup: skip, too close');
         return;
       }
-      const result = await pool.qu  ery(
+      const result = await pool.query(
         `INSERT INTO potholes (geom, severity, det_id)
          VALUES (ST_SetSRID(ST_MakePoint($1, $2), 4326), $3, $4)
          RETURNING id, created_at`,
