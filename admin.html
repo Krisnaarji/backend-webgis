@@ -1,122 +1,313 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - Pothole Detection</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden;font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0}
-#header{height:48px;background:#1e293b;display:flex;justify-content:space-between;align-items:center;padding:0 20px}
-#header h1{font-size:16px;color:#38bdf8}
-.st{display:flex;align-items:center;gap:8px;font-size:13px}
-.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
-.on{background:#22c55e;box-shadow:0 0 8px #22c55e}
-.off{background:#ef4444;box-shadow:0 0 8px #ef4444}
-#content{position:absolute;top:48px;bottom:0;left:0;right:0;display:flex}
-#map{flex:1;min-width:0}
-#panel{width:480px;display:flex;flex-direction:column;background:#1e293b}
-.stats{display:flex;gap:6px;padding:8px;flex-shrink:0}
-.card{flex:1;background:#334155;border-radius:6px;padding:8px;text-align:center}
-.card .n{font-size:20px;font-weight:bold;color:#38bdf8}
-.card .l{font-size:10px;color:#94a3b8;margin-top:2px}
-#loghdr{padding:6px 10px;background:#334155;font-size:12px;font-weight:600;display:flex;justify-content:space-between;flex-shrink:0}
-#logbox{flex:1;overflow-y:auto;padding:6px;font-family:'Courier New',monospace;font-size:10px;line-height:1.5;background:#0f172a}
-.ll{white-space:nowrap}
-.t-det{color:#22c55e}
-.t-trigger{color:#f59e0b}
-.t-normal{color:#94a3b8}
-.t-vps{color:#38bdf8}
-.t-buffer{color:#a78bfa}
-#btns{padding:8px;display:flex;gap:6px;flex-shrink:0}
-.btn{padding:6px 14px;border:none;border-radius:5px;font-size:12px;cursor:pointer;font-weight:600}
-.b-go{background:#22c55e;color:#fff}
-.b-no{background:#ef4444;color:#fff}
-.b-cl{background:#475569;color:#fff}
-.btn:hover{opacity:0.85}
-</style>
-</head>
-<body>
-<div id="header">
-  <h1>Pothole Detection — Admin</h1>
-  <div class="st"><div class="dot off" id="dot"></div><span id="stxt">Edge Offline</span></div>
-</div>
-<div id="content">
-  <div id="map"></div>
-  <div id="panel">
-    <div class="stats">
-      <div class="card"><div class="n" id="tot">0</div><div class="l">Total</div></div>
-      <div class="card"><div class="n" id="tod">0</div><div class="l">Hari Ini</div></div>
-      <div class="card"><div class="n" id="spd">-</div><div class="l">FPS / Speed</div></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Pothole Detection</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        font-family: "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      #header {
+        height: 48px;
+        background: #1e293b;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px;
+      }
+      #header h1 {
+        font-size: 16px;
+        color: #38bdf8;
+      }
+      .st {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .on {
+        background: #22c55e;
+        box-shadow: 0 0 8px #22c55e;
+      }
+      .off {
+        background: #ef4444;
+        box-shadow: 0 0 8px #ef4444;
+      }
+      #content {
+        position: absolute;
+        top: 48px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+      }
+      #map {
+        flex: 1;
+        min-width: 0;
+      }
+      #panel {
+        width: 480px;
+        display: flex;
+        flex-direction: column;
+        background: #1e293b;
+      }
+      .stats {
+        display: flex;
+        gap: 6px;
+        padding: 8px;
+        flex-shrink: 0;
+      }
+      .card {
+        flex: 1;
+        background: #334155;
+        border-radius: 6px;
+        padding: 8px;
+        text-align: center;
+      }
+      .card .n {
+        font-size: 20px;
+        font-weight: bold;
+        color: #38bdf8;
+      }
+      .card .l {
+        font-size: 10px;
+        color: #94a3b8;
+        margin-top: 2px;
+      }
+      #loghdr {
+        padding: 6px 10px;
+        background: #334155;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+      #logbox {
+        flex: 1;
+        overflow-y: auto;
+        padding: 6px;
+        font-family: "Courier New", monospace;
+        font-size: 10px;
+        line-height: 1.5;
+        background: #0f172a;
+      }
+      .ll {
+        white-space: nowrap;
+      }
+      .t-det {
+        color: #22c55e;
+      }
+      .t-trigger {
+        color: #f59e0b;
+      }
+      .t-normal {
+        color: #94a3b8;
+      }
+      .t-vps {
+        color: #38bdf8;
+      }
+      .t-buffer {
+        color: #a78bfa;
+      }
+      #btns {
+        padding: 8px;
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .btn {
+        padding: 6px 14px;
+        border: none;
+        border-radius: 5px;
+        font-size: 12px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .b-go {
+        background: #22c55e;
+        color: #fff;
+      }
+      .b-no {
+        background: #ef4444;
+        color: #fff;
+      }
+      .b-cl {
+        background: #475569;
+        color: #fff;
+      }
+      .btn:hover {
+        opacity: 0.85;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="header">
+      <h1>Pothole Detection — Admin</h1>
+      <div class="st">
+        <div class="dot off" id="dot"></div>
+        <span id="stxt">Edge Offline</span>
+      </div>
     </div>
-    <div id="loghdr"><span>Live Monitor</span><span id="lc">0</span></div>
-    <div id="logbox"></div>
-    <div id="btns">
-      <button class="btn b-go" onclick="cmd('start')">Start</button>
-      <button class="btn b-no" onclick="cmd('stop')">Stop</button>
-      <button class="btn b-cl" onclick="clr()">Clear</button>
+    <div id="content">
+      <div id="map"></div>
+      <div id="panel">
+        <div class="stats">
+          <div class="card">
+            <div class="n" id="tot">0</div>
+            <div class="l">Total</div>
+          </div>
+          <div class="card">
+            <div class="n" id="tod">0</div>
+            <div class="l">Hari Ini</div>
+          </div>
+          <div class="card">
+            <div class="n" id="spd">-</div>
+            <div class="l">FPS / Speed</div>
+          </div>
+        </div>
+        <div id="loghdr"><span>Live Monitor</span><span id="lc">0</span></div>
+        <div id="logbox"></div>
+        <div id="btns">
+          <button class="btn b-go" onclick="cmd('start')">Start</button>
+          <button class="btn b-no" onclick="cmd('stop')">Stop</button>
+          <button class="btn b-cl" onclick="clr()">Clear</button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-<script>
-var sk=io(window.location.origin,{path:'/socket.io/',query:{role:'admin'}});
-var map=L.map('map').setView([-8.65,115.22],13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'OSM'}).addTo(map);
-var mk=L.layerGroup().addTo(map);
-var lc=0;
-setTimeout(function(){map.invalidateSize()},300);
+    <script>
+      var sk = io(window.location.origin, {
+        path: "/socket.io/",
+        query: { role: "admin" },
+      });
+      var map = L.map("map").setView([-8.65, 115.22], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "OSM",
+      }).addTo(map);
+      var mk = L.layerGroup().addTo(map);
+      var lc = 0;
+      setTimeout(function () {
+        map.invalidateSize();
+      }, 300);
 
-fetch('/api/potholes').then(function(r){return r.json()}).then(function(d){
-  d.forEach(function(p){addM(p)});
-  document.getElementById('tot').textContent=d.length;
-});
-fetch('/api/stats').then(function(r){return r.json()}).then(function(s){
-  document.getElementById('tot').textContent=s.total;
-  document.getElementById('tod').textContent=s.today;
-});
+      fetch("/api/potholes")
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (d) {
+          d.forEach(function (p) {
+            addM(p);
+          });
+          document.getElementById("tot").textContent = d.length;
+        });
+      fetch("/api/stats")
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (s) {
+          document.getElementById("tot").textContent = s.total;
+          document.getElementById("tod").textContent = s.today;
+        });
 
-function addM(p){
-  var c=p.severity==='high'?'#ef4444':p.severity==='medium'?'#f59e0b':'#22c55e';
-  var m=L.circleMarker([p.lat,p.lng],{radius:8,fillColor:c,color:'#fff',weight:2,fillOpacity:0.8});
-  var pp='<b>#'+p.id+'</b><br>'+p.severity+'<br>'+new Date(p.created_at).toLocaleString('id-ID');
-  if(p.image_name)pp+='<br><img src="/uploads/'+p.image_name+'" style="width:180px;margin-top:4px;border-radius:4px">';
-  m.bindPopup(pp);mk.addLayer(m);
-}
+      function addM(p) {
+        var c =
+          p.severity === "high"
+            ? "#ef4444"
+            : p.severity === "medium"
+              ? "#f59e0b"
+              : "#22c55e";
+        var m = L.circleMarker([p.lat, p.lng], {
+          radius: 8,
+          fillColor: c,
+          color: "#fff",
+          weight: 2,
+          fillOpacity: 0.8,
+        });
+        var pp =
+          "<b>#" +
+          p.id +
+          "</b><br>" +
+          p.severity +
+          "<br>" +
+          new Date(p.created_at).toLocaleString("id-ID");
+        if (p.image_name)
+          pp +=
+            '<br><img src="/uploads/' +
+            p.image_name +
+            '" style="width:180px;margin-top:4px;border-radius:4px">';
+        m.bindPopup(pp);
+        mk.addLayer(m);
+      }
 
-sk.on('edge_status',function(d){
-  document.getElementById('dot').className='dot '+(d.online?'on':'off');
-  document.getElementById('stxt').textContent=d.online?'Edge Online':'Edge Offline';
-});
+      sk.on("edge_status", function (d) {
+        document.getElementById("dot").className =
+          "dot " + (d.online ? "on" : "off");
+        document.getElementById("stxt").textContent = d.online
+          ? "Edge Online"
+          : "Edge Offline";
+      });
 
-sk.on('log',function(d){
-  addL(d.message,d.type||'normal');
-  if(d.speed!==undefined)document.getElementById('spd').textContent=(d.fps||'-')+' / '+d.speed.toFixed(0);
-});
+      sk.on("log", function (d) {
+        addL(d.message, d.type || "normal");
+        if (d.speed !== undefined)
+          document.getElementById("spd").textContent =
+            (d.fps || "-") + " / " + d.speed.toFixed(0);
+      });
 
-sk.on('new_pothole',function(d){
-  addM(d);
-  var t=document.getElementById('tot');t.textContent=parseInt(t.textContent)+1;
-  var td=document.getElementById('tod');td.textContent=parseInt(td.textContent)+1;
-  map.flyTo([d.lat,d.lng],16);
-  addL('NEW: '+d.severity+' @ '+d.lat+','+d.lng,'det');
-});
+      sk.on("new_pothole", function (d) {
+        addM(d);
+        var t = document.getElementById("tot");
+        t.textContent = parseInt(t.textContent) + 1;
+        var td = document.getElementById("tod");
+        td.textContent = parseInt(td.textContent) + 1;
+        map.flyTo([d.lat, d.lng], 16);
+        addL("NEW: " + d.severity + " @ " + d.lat + "," + d.lng, "det");
+      });
 
-function addL(m,t){
-  var b=document.getElementById('logbox');
-  var l=document.createElement('div');
-  l.className='ll t-'+t;
-  l.textContent='['+new Date().toLocaleTimeString('id-ID')+'] '+m;
-  b.appendChild(l);
-  b.scrollTop=b.scrollHeight;
-  lc++;document.getElementById('lc').textContent=lc;
-  while(b.children.length>500)b.removeChild(b.firstChild);
-}
+      function addL(m, t) {
+        var b = document.getElementById("logbox");
+        var l = document.createElement("div");
+        l.className = "ll t-" + t;
+        l.textContent = "[" + new Date().toLocaleTimeString("id-ID") + "] " + m;
+        b.appendChild(l);
+        b.scrollTop = b.scrollHeight;
+        lc++;
+        document.getElementById("lc").textContent = lc;
+        while (b.children.length > 500) b.removeChild(b.firstChild);
+      }
 
-function cmd(a){sk.emit('command',{action:a});addL('CMD: '+a,'vps')}
-function clr(){document.getElementById('logbox').innerHTML='';lc=0;document.getElementById('lc').textContent='0'}
-</script>
-</body>
+      function cmd(a) {
+        sk.emit("command", { action: a });
+        addL("CMD: " + a, "vps");
+      }
+      function clr() {
+        document.getElementById("logbox").innerHTML = "";
+        lc = 0;
+        document.getElementById("lc").textContent = "0";
+      }
+    </script>
+  </body>
 </html>

@@ -19,3 +19,4 @@ jobs:
             npm install
             pm2 restart api-webgis
             cp admin.html /var/www/webgis/admin.html
+            cp crud.html /var/www/webgis/crud.html

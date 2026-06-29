@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Manager - Pothole Detection</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 20px;
+      }
+      h1 {
+        font-size: 20px;
+        color: #38bdf8;
+        margin-bottom: 4px;
+      }
+      .sub {
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 16px;
+      }
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .toolbar input {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        color: #e2e8f0;
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+      .btn {
+        padding: 6px 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .btn-del {
+        background: #ef4444;
+        color: #fff;
+      }
+      .btn-ref {
+        background: #334155;
+        color: #e2e8f0;
+      }
+      .btn-sel {
+        background: #475569;
+        color: #e2e8f0;
+      }
+      .btn:hover {
+        opacity: 0.85;
+      }
+      .count {
+        font-size: 12px;
+        color: #64748b;
+        margin-left: auto;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+      }
+      .card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        overflow: hidden;
+        transition: border-color 0.2s;
+      }
+      .card.selected {
+        border-color: #38bdf8;
+      }
+      .card-img {
+        width: 100%;
+        aspect-ratio: 4/3;
+        object-fit: cover;
+        cursor: pointer;
+        background: #0f172a;
+      }
+      .card-img:hover {
+        opacity: 0.85;
+      }
+      .card-no-img {
+        width: 100%;
+        aspect-ratio: 4/3;
+        background: #334155;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-size: 12px;
+      }
+      .card-body {
+        padding: 10px;
+      }
+      .card-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+      .card-id {
+        font-size: 11px;
+        color: #64748b;
+        font-family: monospace;
+      }
+      .card-sev {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 99px;
+        text-transform: uppercase;
+      }
+      .sev-high {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+      .sev-medium {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .card-coords {
+        font-size: 11px;
+        color: #94a3b8;
+        font-family: monospace;
+        margin-bottom: 4px;
+      }
+      .card-time {
+        font-size: 11px;
+        color: #64748b;
+      }
+      .card-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .btn-sm {
+        padding: 4px 10px;
+        font-size: 11px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .btn-sm-del {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+      .btn-sm-del:hover {
+        background: rgba(239, 68, 68, 0.3);
+      }
+      .btn-sm-sel {
+        background: rgba(56, 189, 248, 0.1);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.2);
+      }
+      .cb {
+        width: 16px;
+        height: 16px;
+        accent-color: #38bdf8;
+        cursor: pointer;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal.open {
+        display: flex;
+      }
+      .modal img {
+        max-width: 90vw;
+        max-height: 90vh;
+        border-radius: 8px;
+      }
+      .modal-close {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #334155;
+        border: none;
+        color: #e2e8f0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        font-size: 18px;
+        cursor: pointer;
+        z-index: 1001;
+      }
+      .empty {
+        text-align: center;
+        padding: 60px;
+        color: #64748b;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Data Manager</h1>
+    <div class="sub" id="info">Loading...</div>
+    <div class="toolbar">
+      <button class="btn btn-ref" onclick="load()">Refresh</button>
+      <button class="btn btn-sel" onclick="selectAll()">Pilih Semua</button>
+      <button class="btn btn-sel" onclick="deselectAll()">Batal Pilih</button>
+      <button class="btn btn-del" onclick="deleteSelected()">
+        Hapus Terpilih
+      </button>
+      <input type="text" id="search" placeholder="Cari..." oninput="render()" />
+      <select
+        id="filterSev"
+        onchange="render()"
+        style="
+          background: #1e293b;
+          border: 1px solid #334155;
+          border-radius: 6px;
+          color: #e2e8f0;
+          padding: 6px;
+          font-size: 13px;
+        "
+      >
+        <option value="">Semua</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+      </select>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+
+    <div class="modal" id="modal" onclick="closeModal()">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <img id="modalImg" src="" />
+    </div>
+
+    <script>
+      var data = [];
+      var selected = new Set();
+
+      function load() {
+        fetch("/api/potholes")
+          .then((r) => r.json())
+          .then((d) => {
+            data = d;
+            selected.clear();
+            document.getElementById("info").textContent =
+              d.length + " data pothole";
+            render();
+          });
+      }
+
+      function render() {
+        var q = (document.getElementById("search").value || "").toLowerCase();
+        var sev = document.getElementById("filterSev").value;
+        var filtered = data.filter(function (p) {
+          if (sev && p.severity !== sev) return false;
+          if (q) {
+            var s = (
+              p.id +
+              " " +
+              p.severity +
+              " " +
+              (p.lat || "") +
+              " " +
+              (p.lng || "") +
+              " " +
+              (p.det_id || "")
+            ).toLowerCase();
+            if (s.indexOf(q) < 0) return false;
+          }
+          return true;
+        });
+        document.getElementById("count").textContent =
+          filtered.length + " ditampilkan, " + selected.size + " dipilih";
+        var g = document.getElementById("grid");
+        if (filtered.length === 0) {
+          g.innerHTML = '<div class="empty">Tidak ada data</div>';
+          return;
+        }
+        g.innerHTML = filtered
+          .map(function (p) {
+            var sel = selected.has(p.id) ? "selected" : "";
+            var chk = selected.has(p.id) ? "checked" : "";
+            var img = p.image_name
+              ? '<img class="card-img" src="/uploads/' +
+                p.image_name +
+                '" onclick="openModal(\'/uploads/' +
+                p.image_name +
+                '\')" loading="lazy">'
+              : '<div class="card-no-img">Tidak ada foto</div>';
+            var sevCls = p.severity === "high" ? "sev-high" : "sev-medium";
+            var t = new Date(p.created_at).toLocaleString("id-ID");
+            return (
+              '<div class="card ' +
+              sel +
+              '" id="card-' +
+              p.id +
+              '">' +
+              img +
+              '<div class="card-body">' +
+              '<div class="card-row">' +
+              '<span class="card-id">#' +
+              p.id +
+              (p.det_id ? " · " + p.det_id : "") +
+              "</span>" +
+              '<span class="card-sev ' +
+              sevCls +
+              '">' +
+              p.severity +
+              "</span>" +
+              "</div>" +
+              '<div class="card-coords">' +
+              Number(p.lat).toFixed(6) +
+              ", " +
+              Number(p.lng).toFixed(6) +
+              "</div>" +
+              '<div class="card-time">' +
+              t +
+              "</div>" +
+              '<div class="card-actions">' +
+              '<input type="checkbox" class="cb" ' +
+              chk +
+              ' onchange="toggleSelect(' +
+              p.id +
+              ')">' +
+              '<button class="btn-sm btn-sm-del" onclick="deleteOne(' +
+              p.id +
+              ')">Hapus</button>' +
+              "</div>" +
+              "</div></div>"
+            );
+          })
+          .join("");
+      }
+
+      function toggleSelect(id) {
+        if (selected.has(id)) selected.delete(id);
+        else selected.add(id);
+        render();
+      }
+
+      function selectAll() {
+        var q = (document.getElementById("search").value || "").toLowerCase();
+        var sev = document.getElementById("filterSev").value;
+        data.forEach(function (p) {
+          var match = true;
+          if (sev && p.severity !== sev) match = false;
+          if (q) {
+            var s = (p.id + " " + p.severity).toLowerCase();
+            if (s.indexOf(q) < 0) match = false;
+          }
+          if (match) selected.add(p.id);
+        });
+        render();
+      }
+
+      function deselectAll() {
+        selected.clear();
+        render();
+      }
+
+      function deleteOne(id) {
+        if (!confirm("Hapus data #" + id + "?")) return;
+        fetch("/api/potholes/" + id, { method: "DELETE" })
+          .then((r) => r.json())
+          .then(function () {
+            data = data.filter(function (p) {
+              return p.id !== id;
+            });
+            selected.delete(id);
+            render();
+          });
+      }
+
+      function deleteSelected() {
+        if (selected.size === 0) {
+          alert("Pilih data dulu");
+          return;
+        }
+        if (!confirm("Hapus " + selected.size + " data?")) return;
+        var ids = Array.from(selected);
+        var done = 0;
+        ids.forEach(function (id) {
+          fetch("/api/potholes/" + id, { method: "DELETE" }).then(function () {
+            done++;
+            if (done === ids.length) {
+              data = data.filter(function (p) {
+                return !selected.has(p.id);
+              });
+              selected.clear();
+              render();
+            }
+          });
+        });
+      }
+
+      function openModal(src) {
+        document.getElementById("modalImg").src = src;
+        document.getElementById("modal").className = "modal open";
+      }
+
+      function closeModal() {
+        document.getElementById("modal").className = "modal";
+      }
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeModal();
+      });
+      load();
+    </script>
+  </body>
+</html>
