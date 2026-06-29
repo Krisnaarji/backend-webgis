@@ -45,8 +45,7 @@ mqttClient.on('message', async (topic, message) => {
     if (topic === 'pothole/detection') {
       const existing = await pool.query(
         `SELECT id FROM potholes 
-         WHERE ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, 5)
-         AND created_at > NOW() - INTERVAL '3 seconds'`,
+         WHERE ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, 10)`,
         [data.lng, data.lat]
       );
       if (existing.rowCount > 0) {
