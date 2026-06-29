@@ -14,24 +14,60 @@
         font-family: "Segoe UI", sans-serif;
         background: #0f172a;
         color: #e2e8f0;
-        padding: 20px;
+        padding: 0;
       }
-      h1 {
-        font-size: 20px;
+      .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: #1e293b;
+        border-bottom: 1px solid #334155;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+      .nav-left h1 {
+        font-size: 16px;
         color: #38bdf8;
-        margin-bottom: 4px;
       }
-      .sub {
+      .nav-info {
         font-size: 12px;
         color: #64748b;
-        margin-bottom: 16px;
       }
-      .toolbar {
+      .nav-center {
         display: flex;
-        gap: 8px;
-        margin-bottom: 16px;
+        gap: 6px;
         align-items: center;
         flex-wrap: wrap;
+        flex: 1;
+        justify-content: center;
+      }
+      .nav-center input,
+      .nav-center select {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        color: #e2e8f0;
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+      .count {
+        font-size: 12px;
+        color: #64748b;
+        flex-shrink: 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+        padding: 16px 20px;
       }
       .toolbar input {
         background: #1e293b;
@@ -217,35 +253,32 @@
     </style>
   </head>
   <body>
-    <h1>Data Manager</h1>
-    <div class="sub" id="info">Loading...</div>
-    <div class="toolbar">
-      <button class="btn btn-ref" onclick="load()">Refresh</button>
-      <button class="btn btn-sel" onclick="selectAll()">Pilih Semua</button>
-      <button class="btn btn-sel" onclick="deselectAll()">Batal Pilih</button>
-      <button class="btn btn-del" onclick="deleteSelected()">
-        Hapus Terpilih
-      </button>
-      <input type="text" id="search" placeholder="Cari..." oninput="render()" />
-      <select
-        id="filterSev"
-        onchange="render()"
-        style="
-          background: #1e293b;
-          border: 1px solid #334155;
-          border-radius: 6px;
-          color: #e2e8f0;
-          padding: 6px;
-          font-size: 13px;
-        "
-      >
-        <option value="">Semua</option>
-        <option value="high">High</option>
-        <option value="medium">Medium</option>
-      </select>
+    <nav class="navbar">
+      <div class="nav-left">
+        <h1>Data Manager</h1>
+        <span class="nav-info" id="info">Loading...</span>
+      </div>
+      <div class="nav-center">
+        <button class="btn btn-ref" onclick="load()">Refresh</button>
+        <button class="btn btn-sel" onclick="selectAll()">Pilih Semua</button>
+        <button class="btn btn-sel" onclick="deselectAll()">Batal Pilih</button>
+        <button class="btn btn-del" onclick="deleteSelected()">
+          Hapus Terpilih
+        </button>
+        <input
+          type="text"
+          id="search"
+          placeholder="Cari..."
+          oninput="render()"
+        />
+        <select id="filterSev" onchange="render()">
+          <option value="">Semua</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+        </select>
+      </div>
       <span class="count" id="count"></span>
-    </div>
-    <div class="grid" id="grid"></div>
+    </nav>
 
     <div class="modal" id="modal" onclick="closeModal()">
       <button class="modal-close" onclick="closeModal()">✕</button>
